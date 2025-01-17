@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'users',
+    'route',
 
     'rest_framework',
     'corsheaders',
@@ -67,7 +68,7 @@ ROOT_URLCONF = 'conf.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -139,8 +140,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_ALLOW_ALL = True
 
 
-
-   
 cred = credentials.Certificate("conf/cred.json")
 FIREBASE_APP = firebase_admin.initialize_app(cred)
 
