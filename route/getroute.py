@@ -4,7 +4,7 @@ import polyline
 import folium
 
 
-def get_route(pickup_lon, pickup_lat, dropoff_lon, dropoff_lat):
+def get_route(pickup_lon, pickup_lat, dropoff_lon, dropoff_lat, attractions=None):
     loc = "{},{};{},{}".format(pickup_lon, pickup_lat, dropoff_lon, dropoff_lat)
     url = "https://router.project-osrm.org/route/v1/driving/"
     r = requests.get(url + loc)
