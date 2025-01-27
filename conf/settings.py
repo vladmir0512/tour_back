@@ -11,9 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from firebase_admin import credentials
 import os
-import firebase_admin
+import pyrebase
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
@@ -139,17 +138,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_ALLOW_ALL = True
 
+config = {
+    'apiKey': "AIzaSyAI_Ws21kfg3FirZWUNIse-AsUwrwuDDro",
+    'authDomain': "alexeyroutes.firebaseapp.com",
+    'projectId': "alexeyroutes",
+    'storageBucket': "alexeyroutes.firebasestorage.app",
+    'messagingSenderId': "766026330256",
+    'appId': "1:766026330256:web:01b1cdeaf63377a5346815",
+    'measurementId': "G-RLG27RXYC9",
+    'databaseURL': 'https://alexeyroutes-default-rtdb.europe-west1.firebasedatabase.app/'
+}
 
-cred = credentials.Certificate("conf/cred.json")
-FIREBASE_APP = firebase_admin.initialize_app(cred)
+FIREBASE= pyrebase.initialize_app(config )
+FIREBASE_AUTH=FIREBASE.auth()
+
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000"
- 
 ]
-
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "users.authentication.FireBaseAuth",
-    ),
-}
