@@ -21,10 +21,10 @@ class RegisterView(View):
             # в firebase отправляем
             try:
                 user = FIREBASE_AUTH.create_user_with_email_and_password(email=email, password=password)
-                return JsonResponse({'message': 'Пользователь создан', 'uid': user.uid})
+                return JsonResponse({'message': 'Пользователь создан', 'data': user},status=200, safe=False, json_dumps_params={'ensure_ascii': False})
             except Exception as e:
-                return JsonResponse({'message': 'Пользователь с таким Email уже зарегистрирован.'})
-            
+                print('Ошибка при создании пользователя: ' + str(e))
+                return JsonResponse({'error': 'Ошибка при создании пользователя: ' + str(e)}, status=400,safe=False, json_dumps_params={'ensure_ascii': False})
 
 class LoginView(View):
     
@@ -44,15 +44,26 @@ class LoginView(View):
             # в firebase отправляем
             try:
                 user = FIREBASE_AUTH.sign_in_with_email_and_password(email, password)
-               #print(user)
-           
-                print(user["email"])
-                print(user["idToken"])
-                print(user["localId"])
-                print(user["refreshToken"])
-                print(user["expiresIn"])
-                return JsonResponse(user)
+                kind = user["kind"]
+                localId = user["localId"]
+                email = user["email"]
+                displayName = user["displayName"]
+                idToken = user["idToken"]
+                registred = user["registered"]
+                refreshToken = user["refreshToken"]
+                expiresIn = user["expiresIn"]
+                return JsonResponse({'message': 'Привет, \n' + user["email"],
+                                    'kind': kind,
+                                    'localId': localId,
+                                    'email': email,
+                                    'displayName': displayName,
+                                    'idToken': idToken,
+                                    'registred': registred,
+                                    'refreshToken': refreshToken,
+                                    'expiresIn': expiresIn}, status=200, safe=False, json_dumps_params={'ensure_ascii': False})
             except Exception as e:
-                print(e)
-                return JsonResponse({'message': str(e)})
-        
+                if str(e)[213:237] == 'INVALID_LOGIN_CREDENTIAL':
+                    return JsonResponse({'error': 'Неверный логин или пароль:'}, status=400, safe=False, json_dumps_params={'ensure_ascii': False})
+                else:
+                    print('Ошибка при входе: ' + str(e)[213:237])
+                    return JsonResponse({'error': 'Ошибка при входе: ' + str(e)[180:]}, status=400, safe=False, json_dumps_params={'ensure_ascii': False})
