@@ -53,7 +53,10 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
             folium.Marker(location=[lat, lon], icon=folium.Icon(color='orange'), popup=attraction[1]).add_to(m)
 
     figure.render()
-    context = {'map': figure}
+    context = {
+        'map': figure,
+        'distance': distance  # Добавляем расстояние в контекст
+    }
     return render(request, 'showroute.html', context)
 
 def is_on_route(lat, lon, route):

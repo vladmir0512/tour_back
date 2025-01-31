@@ -4,9 +4,36 @@
 <meta charset="UTF-8">
 <title>Route between the locations</title>
 {{map.header.render|safe}}
+<style>
+    .info-panel {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        background-color: white;
+        padding: 10px;
+        margin: 30px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        font-family: Arial, sans-serif;
+    }
+    .info-panel h4 {
+        margin: 0 0 5px 0;
+        color: #333;
+    }
+    .info-panel p {
+        margin: 0;
+        color: #666;
+    }
+</style>
 </head>
+
 <body>
 {% if map %}
+<div class="info-panel">
+    <h4>Информация о маршруте</h4>
+    <p>Расстояние: {{ distance }} км</p>
+</div>
 
 {{map.html.render|safe}}
 <script>
@@ -14,4 +41,5 @@
 </script>
 {% endif %}
 </body>
+
 </html>
