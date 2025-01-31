@@ -100,6 +100,10 @@ def find_closest_point_on_route(point_coords, routes):
     return closest_point, min_distance
 
 def showroute(request, lat1, long1, lat2, long2, attractions=None):
+    # Получаем параметры видимости маркеров из запроса
+    show_attractions = request.GET.get('show_attractions', 'true').lower() == 'true'
+    show_hotels = request.GET.get('show_hotels', 'true').lower() == 'true'
+    
     # Получаем минимальную дистанцию из параметров запроса или используем значение по умолчанию
     try:
         min_distance_threshold = float(request.GET.get('min_distance', 1.0))
@@ -164,62 +168,85 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
         folium.PolyLine([point1, point2], weight=8, color='blue', opacity=0.6).add_to(m)
     
     # Добавляем маркеры для стартовой и конечной точек
-    folium.Marker(location=start_point, icon=folium.Icon(icon='play', color='green'), popup='Старт').add_to(m)
-    folium.Marker(location=end_point, icon=folium.Icon(icon='stop', color='red'), popup='Финиш').add_to(m)
+    folium.Marker(
+        location=start_point,
+        icon=folium.Icon(icon='play', color='green'),
+        popup='Старт',
+        html='<div class="marker-start"></div>'
+    ).add_to(m)
+    
+    folium.Marker(
+        location=end_point,
+        icon=folium.Icon(icon='stop', color='red'),
+        popup='Финиш',
+        html='<div class="marker-end"></div>'
+    ).add_to(m)
 
     nearby_attractions = {}
     nearby_hotels = {}
     
     # Обработка достопримечательностей
-    for attraction in attractions:
-        coords = tuple(map(float, attraction[0].split(',')))
-        closest_point, min_distance = find_closest_point_on_route(coords, routes)
-        
-        # Особая обработка для Стеллы Новочеркасск
-        if "Stella Novocherkassk" in attraction[1]:
-            logger.info(f"Стелла Новочеркасск: минимальное расстояние = {min_distance:.2f} км")
-            # Добавляем перпендикулярную линию от стеллы до ближайшей точки маршрута
-            folium.PolyLine(
-                locations=[coords, closest_point],
-                weight=2,
-                color='red',
-                opacity=0.8,
-                dash_array='5, 10',
-                popup=f'Минимальное расстояние: {min_distance:.2f} км'
-            ).add_to(m)
+    if show_attractions:
+        attraction_counter = 1
+        for attraction in attractions:
+            coords = tuple(map(float, attraction[0].split(',')))
+            closest_point, min_distance = find_closest_point_on_route(coords, routes)
             
-        # Если место находится в пределах заданной дистанции от маршрута
-        if min_distance <= min_distance_threshold:
-            nearby_attractions[attraction[1]] = {
-                'name': attraction[1],
-                'distance': min_distance,
-                'coords': coords
-            }
-            # Добавляем маркер на карту
-            folium.Marker(
-                location=[coords[0], coords[1]],
-                icon=folium.Icon(color='orange'),
-                popup=f"{attraction[1]} ({min_distance:.2f} км)"
-            ).add_to(m)
+            # Особая обработка для Стеллы Новочеркасск
+            if "Stella Novocherkassk" in attraction[1]:
+                logger.info(f"Стелла Новочеркасск: минимальное расстояние = {min_distance:.2f} км")
+                # Добавляем перпендикулярную линию от стеллы до ближайшей точки маршрута
+                folium.PolyLine(
+                    locations=[coords, closest_point],
+                    weight=2,
+                    color='red',
+                    opacity=0.8,
+                    dash_array='5, 10',
+                    popup=f'Минимальное расстояние: {min_distance:.2f} км'
+                ).add_to(m)
+                
+            # Если место находится в пределах заданной дистанции от маршрута
+            if min_distance <= min_distance_threshold:
+                nearby_attractions[attraction[1]] = {
+                    'name': attraction[1],
+                    'distance': min_distance,
+                    'coords': coords,
+                    'id': f'marker-attraction-{attraction_counter}'
+                }
+                # Добавляем маркер на карту с уникальным классом
+                marker = folium.Marker(
+                    location=[coords[0], coords[1]],
+                    icon=folium.Icon(color='orange'),
+                    popup=f"{attraction[1]} ({min_distance:.2f} км)",
+                    html=f'<div class="marker-attraction" id="marker-attraction-{attraction_counter}"></div>'
+                )
+                marker.add_to(m)
+                attraction_counter += 1
 
     # Обработка отелей
-    for hotel in hotels:
-        coords = tuple(map(float, hotel[0].split(',')))
-        closest_point, min_distance = find_closest_point_on_route(coords, routes)
-        
-        # Если отель находится в пределах заданной дистанции от маршрута
-        if min_distance <= min_distance_threshold:
-            nearby_hotels[hotel[1]] = {
-                'name': hotel[1],
-                'distance': min_distance,
-                'coords': coords
-            }
-            # Добавляем маркер отеля на карту
-            folium.Marker(
-                location=[coords[0], coords[1]],
-                icon=folium.Icon(color='purple', icon='home'),
-                popup=f"{hotel[1]} ({min_distance:.2f} км)"
-            ).add_to(m)
+    if show_hotels:
+        hotel_counter = 1
+        for hotel in hotels:
+            coords = tuple(map(float, hotel[0].split(',')))
+            closest_point, min_distance = find_closest_point_on_route(coords, routes)
+            
+            # Если отель находится в пределах заданной дистанции от маршрута
+            if min_distance <= min_distance_threshold:
+                nearby_hotels[hotel[1]] = {
+                    'name': hotel[1],
+                    'distance': min_distance,
+                    'coords': coords,
+                    'id': f'marker-hotel-{hotel_counter}'
+                }
+                # Добавляем маркер отеля на карту с уникальным классом
+                marker = folium.Marker(
+                    location=[coords[0], coords[1]],
+                    icon=folium.Icon(color='purple', icon='home'),
+                    popup=f"{hotel[1]} ({min_distance:.2f} км)",
+                    html=f'<div class="marker-hotel" id="marker-hotel-{hotel_counter}"></div>'
+                )
+                marker.add_to(m)
+                hotel_counter += 1
 
     try:
         figure.render()
@@ -228,7 +255,9 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
             'distance': round(distance, 2),
             'nearby_attractions': sorted(nearby_attractions.values(), key=lambda x: x['distance'])[:5],
             'nearby_hotels': sorted(nearby_hotels.values(), key=lambda x: x['distance'])[:5],
-            'min_distance': min_distance_threshold  # Добавляем текущее значение в контекст
+            'min_distance': min_distance_threshold,
+            'show_attractions': show_attractions,
+            'show_hotels': show_hotels
         }
         return render(request, 'showroute.html', context)
     except Exception as e:

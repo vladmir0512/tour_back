@@ -47,7 +47,7 @@
         font-size: 14px;
     }
     
-    .distance-input input {
+    .distance-input input[type="number"] {
         width: 80px;
         padding: 5px;
         border: 1px solid #ddd;
@@ -66,6 +66,46 @@
     
     .distance-input button:hover {
         background: #2980b9;
+    }
+
+    .marker-toggles {
+        margin: 10px 0;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .marker-toggle {
+        display: flex;
+        align-items: center;
+        margin: 5px 0;
+        cursor: pointer;
+    }
+
+    .marker-toggle input[type="checkbox"] {
+        margin-right: 8px;
+    }
+
+    .marker-toggle label {
+        font-size: 14px;
+        color: #2c3e50;
+        cursor: pointer;
+    }
+
+    .marker-toggle .color-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+        display: inline-block;
+    }
+
+    .color-orange {
+        background-color: orange;
+    }
+
+    .color-purple {
+        background-color: purple;
     }
 
     .places-list {
@@ -145,15 +185,28 @@
     
     <div class="distance-input">
         <label for="min-distance">Минимальная дистанция до маршрута (км):</label>
-        <input type="number" id="min-distance" value="1.00" step="0.1" min="0.1" max="10">
+        <input type="number" id="min-distance" value="{{ min_distance }}" step="0.1" min="0.1" max="10">
         <button onclick="updateDistance()">Применить</button>
+    </div>
+
+    <div class="marker-toggles">
+        <div class="marker-toggle">
+            <input type="checkbox" id="toggle-attractions" {% if show_attractions %}checked{% endif %} onchange="toggleMarkers('attractions')">
+            <span class="color-indicator color-orange"></span>
+            <label for="toggle-attractions">Достопримечательности</label>
+        </div>
+        <div class="marker-toggle">
+            <input type="checkbox" id="toggle-hotels" {% if show_hotels %}checked{% endif %} onchange="toggleMarkers('hotels')">
+            <span class="color-indicator color-purple"></span>
+            <label for="toggle-hotels">Отели</label>
+        </div>
     </div>
     
     <div class="places-list">
         <h5>Ближайшие достопримечательности</h5>
-        <ul>
+        <ul id="attractions-list">
             {% for attraction in nearby_attractions %}
-            <li class="attraction">
+            <li class="attraction" data-marker-id="marker-attraction-{{ forloop.counter }}">
                 <span class="name">{{ attraction.name }}</span>
                 <span class="distance">{{ attraction.distance|floatformat:2 }} км</span>
             </li>
@@ -161,9 +214,9 @@
         </ul>
 
         <h5>Ближайшие отели</h5>
-        <ul>
+        <ul id="hotels-list">
             {% for hotel in nearby_hotels %}
-            <li class="hotel">
+            <li class="hotel" data-marker-id="marker-hotel-{{ forloop.counter }}">
                 <span class="name">{{ hotel.name }}</span>
                 <span class="distance">{{ hotel.distance|floatformat:2 }} км</span>
             </li>
@@ -173,27 +226,54 @@
 </div>
 
 {{map.html.render|safe}}
-<script>
-{{map.script.render|safe}}
 
+<script>
 function updateDistance() {
     const minDistance = document.getElementById('min-distance').value;
-    // Получаем текущий URL
     const currentUrl = new URL(window.location.href);
-    // Добавляем или обновляем параметр min_distance
     currentUrl.searchParams.set('min_distance', minDistance);
-    // Перезагружаем страницу с новым параметром
     window.location.href = currentUrl.toString();
 }
 
-// Устанавливаем значение из URL при загрузке страницы
+function toggleMarkers(type) {
+    const isChecked = document.getElementById(`toggle-${type}`).checked;
+    const currentUrl = new URL(window.location.href);
+    
+    // Обновляем параметры URL в зависимости от типа маркеров
+    if (type === 'attractions') {
+        currentUrl.searchParams.set('show_attractions', isChecked);
+    } else if (type === 'hotels') {
+        currentUrl.searchParams.set('show_hotels', isChecked);
+    }
+    
+    // Сохраняем текущее значение min_distance
+    const minDistance = document.getElementById('min-distance').value;
+    currentUrl.searchParams.set('min_distance', minDistance);
+    
+    // Перезагружаем страницу с новыми параметрами
+    window.location.href = currentUrl.toString();
+}
+
 window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
     const minDistance = urlParams.get('min_distance');
     if (minDistance) {
         document.getElementById('min-distance').value = minDistance;
     }
+    
+    // Устанавливаем состояние чекбоксов в соответствии с параметрами URL
+    const showAttractions = urlParams.get('show_attractions');
+    const showHotels = urlParams.get('show_hotels');
+    
+    if (showAttractions !== null) {
+        document.getElementById('toggle-attractions').checked = showAttractions === 'true';
+    }
+    if (showHotels !== null) {
+        document.getElementById('toggle-hotels').checked = showHotels === 'true';
+    }
 }
+
+{{map.script.render|safe}}
 </script>
 {% endif %}
 </body>
