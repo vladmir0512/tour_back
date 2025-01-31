@@ -100,6 +100,12 @@ def find_closest_point_on_route(point_coords, routes):
     return closest_point, min_distance
 
 def showroute(request, lat1, long1, lat2, long2, attractions=None):
+    # Получаем минимальную дистанцию из параметров запроса или используем значение по умолчанию
+    try:
+        min_distance_threshold = float(request.GET.get('min_distance', 1.0))
+    except (ValueError, TypeError):
+        min_distance_threshold = 1.0
+    
     # Валидация входных координат
     for coord_pair in [(lat1, long1, "начальной"), (lat2, long2, "конечной")]:
         is_valid, error_msg = validate_coordinates(coord_pair[0], coord_pair[1])
@@ -182,8 +188,8 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
                 popup=f'Минимальное расстояние: {min_distance:.2f} км'
             ).add_to(m)
             
-        # Если место находится в пределах 1 км от маршрута
-        if min_distance <= 1:
+        # Если место находится в пределах заданной дистанции от маршрута
+        if min_distance <= min_distance_threshold:
             nearby_attractions[attraction[1]] = {
                 'name': attraction[1],
                 'distance': min_distance,
@@ -201,8 +207,8 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
         coords = tuple(map(float, hotel[0].split(',')))
         closest_point, min_distance = find_closest_point_on_route(coords, routes)
         
-        # Если отель находится в пределах 1 км от маршрута
-        if min_distance <= 1:
+        # Если отель находится в пределах заданной дистанции от маршрута
+        if min_distance <= min_distance_threshold:
             nearby_hotels[hotel[1]] = {
                 'name': hotel[1],
                 'distance': min_distance,
@@ -221,7 +227,8 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
             'map': figure,
             'distance': round(distance, 2),
             'nearby_attractions': sorted(nearby_attractions.values(), key=lambda x: x['distance'])[:5],
-            'nearby_hotels': sorted(nearby_hotels.values(), key=lambda x: x['distance'])[:5]
+            'nearby_hotels': sorted(nearby_hotels.values(), key=lambda x: x['distance'])[:5],
+            'min_distance': min_distance_threshold  # Добавляем текущее значение в контекст
         }
         return render(request, 'showroute.html', context)
     except Exception as e:

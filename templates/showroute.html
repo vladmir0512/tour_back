@@ -32,6 +32,42 @@
         margin: 0;
         color: #666;
     }
+    
+    .distance-input {
+        margin: 15px 0;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+    
+    .distance-input label {
+        display: block;
+        margin-bottom: 5px;
+        color: #2c3e50;
+        font-size: 14px;
+    }
+    
+    .distance-input input {
+        width: 80px;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-right: 5px;
+    }
+    
+    .distance-input button {
+        padding: 5px 10px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .distance-input button:hover {
+        background: #2980b9;
+    }
+
     .places-list {
         margin-top: 15px;
         max-height: 300px;
@@ -107,6 +143,12 @@
     <h4>Информация о маршруте</h4>
     <p>Расстояние: {{ distance|floatformat:2 }} км</p>
     
+    <div class="distance-input">
+        <label for="min-distance">Минимальная дистанция до маршрута (км):</label>
+        <input type="number" id="min-distance" value="1.00" step="0.1" min="0.1" max="10">
+        <button onclick="updateDistance()">Применить</button>
+    </div>
+    
     <div class="places-list">
         <h5>Ближайшие достопримечательности</h5>
         <ul>
@@ -116,7 +158,6 @@
                 <span class="distance">{{ attraction.distance|floatformat:2 }} км</span>
             </li>
             {% endfor %}
-
         </ul>
 
         <h5>Ближайшие отели</h5>
@@ -127,7 +168,6 @@
                 <span class="distance">{{ hotel.distance|floatformat:2 }} км</span>
             </li>
             {% endfor %}
-
         </ul>
     </div>
 </div>
@@ -135,6 +175,25 @@
 {{map.html.render|safe}}
 <script>
 {{map.script.render|safe}}
+
+function updateDistance() {
+    const minDistance = document.getElementById('min-distance').value;
+    // Получаем текущий URL
+    const currentUrl = new URL(window.location.href);
+    // Добавляем или обновляем параметр min_distance
+    currentUrl.searchParams.set('min_distance', minDistance);
+    // Перезагружаем страницу с новым параметром
+    window.location.href = currentUrl.toString();
+}
+
+// Устанавливаем значение из URL при загрузке страницы
+window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const minDistance = urlParams.get('min_distance');
+    if (minDistance) {
+        document.getElementById('min-distance').value = minDistance;
+    }
+}
 </script>
 {% endif %}
 </body>
