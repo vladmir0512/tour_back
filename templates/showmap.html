@@ -1,61 +1,65 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>Map to find route</title>
-<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+from django.shortcuts import render
+import folium
+from route import getroute
 
-<!-- Load Leaflet from CDN -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-crossorigin=""></script>
+def showmap(request):
+    return render(request, 'showmap.html')
 
-<!-- Load Esri Leaflet from CDN -->
-<script src="https://unpkg.com/esri-leaflet@2.5.0/dist/esri-leaflet.js"
-integrity="sha512-ucw7Grpc+iEQZa711gcjgMBnmd9qju1CICsRaryvX7HJklK0pGl/prxKvtHwpgm5ZHdvAil7YPxI1oWPOWK3UQ=="
-crossorigin=""></script>
+def showroute(request, lat1, long1, lat2, long2, attractions=None):
+    # Главные достопримечательности Новочеркасска
+    attractions = [
+        ("47.41465709241513,40.10877591178936", "Pamyatnik Yermaku"),
+        ("47.40964864620244,40.10130932945763",  " Fountain in front of the palace Chieftain"),
+        ("47.41004133861746,40.10100290000992",  " Fontan V Skvere Imeni M.i. Platova"),
+        ("47.40832849238213,40.10235142945763",  " Bol'shoy Fontan"),
+        ("47.41127503864937,40.103805500009905",  " Fountain on the central square"),
+        ("47.40908633859277,40.09673912945763",  " Pamyatnik Generalissimusu A.v.suvorovu"),
+        ("47.418972438848364,40.02002422945763",  " Stella Novocherkassk"),
+        ("47.70745374632344,40.21376582945763",  "Soldatu-Osvoboditelyu"),
+        ("47.413097919126834,40.11076938515802",  "Pamyatnik Yakovu Petrovichu Baklanovu"),
+        ("47.40942848480216,40.10157749654204",  "Atamanskiy Dvorets"),
+        ("47.41232440559971,40.104141070551094",  "Museum of the History of the Don Cossacks"),
+        ("47.41412297744595,40.110430000019825",  "Voznesenskiy Kafedral'nyy Sobor"),
+        ("47.410524884839944,40.10146531781071",  "Monument to a Cossack"),
+        ("47.42316668728757,40.102470290008945",  "Dom-Muzey M.b.grekova"),
+        ("47.42218732290731,40.09404537387836",  "Памятник казакам-революционерам Ф.Г.Подтелкову и М.В.Кривошлыкову"),
+        ("47.409424178417865,40.10349427132213",  "mound of Glory"),
+        ("47.42236154099214,40.09387427132213",  "Poklonnyy Krest"),
+        ("47.4144057398952,40.111293100158555",  "reconciliation and harmony Monument"),
+        ("47.4218528,40.06920930015854",  "Monument to Cossack horses"),
+        ("447.425399824236216, 40.082276515504205", "House-Museum of Ivan Krylov")
 
-<!-- Load Esri Leaflet Geocoder from CDN -->
-<link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.css"
-integrity="sha512-IM3Hs+feyi40yZhDH6kV8vQMg4Fh20s9OzInIIAc4nx7aMYMfo+IenRUekoYsHZqGkREUgx0VvlEsgm7nCDW9g=="
-crossorigin="">
-<script src="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.js"
-integrity="sha512-HrFUyCEtIpxZloTgEKKMq4RFYhxjJkCiF5sDxuAokklOeZ68U2NPfh4MFtyIVWlsKtVbK5GD2/JzFyAfvT5ejA=="
-crossorigin=""></script>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-<style>
-body { margin:0; padding:0; }
-#map { position: absolute; top:0; bottom:0; right:0; left:0; }
-</style>
-</head>
-<body>
-<div id="map"></div>
-<script>
-var map = L.map('map').setView([11,79], 10);
-data={};
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
-var gcs = L.esri.Geocoding.geocodeService();
-var count=0;
-map.on('click', (e)=>{
-count+=1;
-gcs.reverse().latlng(e.latlng).run((err, res)=>{
-if(err) return;
-L.marker(res.latlng).addTo(map).bindPopup(res.address.Match_addr).openPopup();
-k=count.toString()
-data[k+'lat']=res.latlng['lat'];
-data[k+'lon']=res.latlng['lng'];
-if(count==2){
-const route_url='http://localhost:8000/'+data['1lat']+','+data['1lon']+','+data['2lat']+','+data['2lon'];
-count=0;
-window.location.replace(route_url);
-}
-});
-});
-</script>
-</body>
-</html>
+    ]
+    
+    attractions += request.GET.getlist('attractions')  # Получаем достопримечательности из параметров запроса
+    figure = folium.Figure()
+    lat1, long1, lat2, long2 = float(lat1), float(long1), float(lat2), float(long2)
+    route = getroute.get_route(long1, lat1, long2, lat2, attractions)
+    m = folium.Map(location=[(route['start_point'][0]), (route['start_point'][1])], zoom_start=10)
+    m.add_to(figure)
+    folium.PolyLine(route['route'], weight=8, color='blue', opacity=0.6).add_to(m)
+    
+    # Добавляем маркеры для стартовой и конечной точек с подписями
+    folium.Marker(location=route['start_point'], icon=folium.Icon(icon='play', color='green'), popup='Старт').add_to(m)
+    folium.Marker(location=route['end_point'], icon=folium.Icon(icon='stop', color='red'), popup='Финиш').add_to(m)
+
+    # Добавляем маркеры для достопримечательностей с названиями
+    for attraction in attractions:
+        lat, lon = map(float, attraction[0].split(','))
+        if is_on_route(lat, lon, route['route']):
+            folium.Marker(location=[lat, lon], icon=folium.Icon(color='orange'), popup=attraction[1]).add_to(m)
+
+    figure.render()
+    context = {'map': figure}
+    return render(request, 'showroute.html', context)
+
+def is_on_route(lat, lon, route):
+    # Логика для проверки, находится ли точка (lat, lon) на маршруте
+    for point in route:
+        if distance(lat, lon, point[0], point[1]) <= 0.003:  # 3 метра
+            return True
+    return False
+
+def distance(lat1, lon1, lat2, lon2):
+    # Простейшая функция для вычисления расстояния между двумя точками
+    return ((lat1 - lat2) ** 2 + (lon1 - lon2) ** 2) ** 0.5

@@ -34,19 +34,22 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
     attractions += request.GET.getlist('attractions')  # Получаем достопримечательности из параметров запроса
     figure = folium.Figure()
     lat1, long1, lat2, long2 = float(lat1), float(long1), float(lat2), float(long2)
-    route = getroute.get_route(long1, lat1, long2, lat2, attractions)
-    m = folium.Map(location=[(route['start_point'][0]), (route['start_point'][1])], zoom_start=10)
+    # get_route возвращает кортеж (start_point, end_point, routes, distance)
+    route_data = getroute.get_route(long1, lat1, long2, lat2, attractions)
+    start_point, end_point, routes, distance = route_data
+    
+    m = folium.Map(location=[start_point[0], start_point[1]], zoom_start=10)
     m.add_to(figure)
-    folium.PolyLine(route['route'], weight=8, color='blue', opacity=0.6).add_to(m)
+    folium.PolyLine(routes, weight=8, color='blue', opacity=0.6).add_to(m)
     
     # Добавляем маркеры для стартовой и конечной точек с подписями
-    folium.Marker(location=route['start_point'], icon=folium.Icon(icon='play', color='green'), popup='Старт').add_to(m)
-    folium.Marker(location=route['end_point'], icon=folium.Icon(icon='stop', color='red'), popup='Финиш').add_to(m)
+    folium.Marker(location=start_point, icon=folium.Icon(icon='play', color='green'), popup='Старт').add_to(m)
+    folium.Marker(location=end_point, icon=folium.Icon(icon='stop', color='red'), popup='Финиш').add_to(m)
 
     # Добавляем маркеры для достопримечательностей с названиями
     for attraction in attractions:
         lat, lon = map(float, attraction[0].split(','))
-        if is_on_route(lat, lon, route['route']):
+        if is_on_route(lat, lon, routes):
             folium.Marker(location=[lat, lon], icon=folium.Icon(color='orange'), popup=attraction[1]).add_to(m)
 
     figure.render()
