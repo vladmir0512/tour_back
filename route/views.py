@@ -152,12 +152,14 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
     
     attractions += request.GET.getlist('attractions')
     figure = folium.Figure()
+    logger.debug(f"Map figure created: {figure}")
     lat1, long1, lat2, long2 = float(lat1), float(long1), float(lat2), float(long2)
     
     route_data = getroute.get_route(long1, lat1, long2, lat2, attractions)
+    logger.debug(f"Route data: {route_data}")  # Логирование данных маршрута
     start_point, end_point, routes, distance = route_data
     
-    m = folium.Map(location=[start_point[0], start_point[1]], zoom_start=10)
+    m = folium.Map(location=[start_point[0], start_point[1]], zoom_start=10) 
     m.add_to(figure)
     
     # Добавляем маршрут на карту
@@ -250,9 +252,10 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
                 hotel_counter += 1
 
     try:
-        figure.render()
+        # No need to render the figure here
+        m=m._repr_html_() #updated
         context = {
-            'map': figure,
+            'map': m,
             'distance': round(distance, 2),
             'nearby_attractions': sorted(nearby_attractions.values(), key=lambda x: x['distance'])[:5],
             'nearby_hotels': sorted(nearby_hotels.values(), key=lambda x: x['distance'])[:5],
@@ -260,6 +263,7 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
             'show_attractions': show_attractions,
             'show_hotels': show_hotels
         }
+        logger.debug(f"Context for rendering: {context}")
         return render(request, 'showroute.html', context)
     except Exception as e:
         logger.error(f"Ошибка при построении маршрута: {str(e)}")
