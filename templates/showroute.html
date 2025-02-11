@@ -3,11 +3,13 @@
 
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
         <title>Route between the locations</title>
         {% load static %}
         {{map.header.render|safe}}
         <style> 
-            .info-panel {
+           .info-panel {
                 position: absolute;
                 top: 80px;
                 left: 30px;
@@ -25,11 +27,11 @@
             .info-panel.collapsed {
                 transform: translateX(-110%);
             }
-    
+         
             .toggle-button {
                 position: absolute;
-                right: -80px;
-                top: 0;
+                right: -8px;
+                top: -5px;
                 width: 50px;
                 height: 50px;
                 cursor: pointer;
@@ -37,8 +39,13 @@
                 border-radius: 8px;
                 box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
                 padding: 5px;
+                transition: top 0.3s ease; /* Добавим плавную анимацию */
             }
-    
+     
+            .info-panel.collapsed .toggle-button {
+                right: -130px;
+                top: -68px; /* Смещаем кнопку вверх при свертывании */
+            }
             .toggle-button img {
                 width: 100%;
                 height: 100%;
@@ -202,6 +209,14 @@
             .places-list li.hotel:before {
                 color: purple;
             }
+            body, html {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                width: 100%;
+            }
+           
+            
         </style>
     </head>
 
@@ -211,11 +226,11 @@
     {{ map.script.render|safe }}  <!-- Ensure correct script rendering for the map -->
     {{ map|safe }}  <!-- Ensure correct script rendering for the map -->
 
-    <div class="info-panel collapsed" id="infoPanel">
+    <div class="info-panel collapsed" id="infoPanel" >
         <div class="toggle-button" onclick="togglePanel()">
             <img src="{% static 'route/routes_round.webp' %}" alt="Toggle panel">
         </div>
-        <div class="panel-content">
+        <div class="panel-content"  >
             <h4>Информация о маршруте</h4>
             <p>Расстояние: {{ distance|floatformat:2 }} км</p>
             
@@ -264,7 +279,6 @@
 
 
     <script>
-        
         function updateDistance() {
             const minDistance = document.getElementById('min-distance').value;
             const currentUrl = new URL(window.location.href);

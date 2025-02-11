@@ -254,6 +254,10 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
     try:
         # No need to render the figure here
         m=m._repr_html_() #updated
+        m = m.replace(
+        '<div style="width:100%;"><div style="position:relative;width:100%;height:0;padding-bottom:60%;">', 
+        '<div style="width:100%;"><div style="width:100%;height:0%;padding-bottom:60%;">', 
+        1)
         context = {
             'map': m,
             'distance': round(distance, 2),
