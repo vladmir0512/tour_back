@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     
     'users',
     'route',
-
+    'api',
     'rest_framework',
     'corsheaders',
     

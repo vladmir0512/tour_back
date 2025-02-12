@@ -6,3 +6,4 @@ polyline~=2.0.2
 pyrebase4
 setuptools
 folium==0.12
+geopy

@@ -10,6 +10,8 @@ from math import radians, sin, cos, sqrt, atan2
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
+
 def showmap(request):
     return render(request, 'showmap.html')
 
