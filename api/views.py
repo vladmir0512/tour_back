@@ -5,6 +5,11 @@ from rest_framework import serializers
 from rest_framework import status
 from .serializers import RouteSerializer, CommentSerializer, UserSerializer
 from django.shortcuts import get_object_or_404
+from urllib.parse import quote_plus
+from django.http import JsonResponse
+
+import requests, time
+
 
 #-----------------------ROUTES---------------------------------
 #-info---------------------------------------------------------
@@ -198,3 +203,27 @@ def view_users(request):
         return Response(serializer.data)
     else:
         return Response(status=status.HTTP_404_NOT_FOUND)
+    
+
+
+
+#--------------------SEARCH_ADDRESS----------------------------
+#-for-android-editText 
+@api_view(['GET'])
+def search_address(request):
+    query = request.GET.get("query")  # Получаем параметр `query` из запроса
+    api_key = 'pk.52083ea2e7c376a3859b2d5c34fee622'  # Вставьте свой API-ключ
+    url = f'https://us1.locationiq.com/v1/search?key={api_key}&q={query}&format=json'
+    
+    try:
+        response = requests.get(url)
+        data = response.json()
+
+        if response.status_code == 200 and isinstance(data, list) and len(data) > 0:
+            result = data[0]
+            lat, lon = result["lat"], result["lon"]
+            return Response({"lat": lat, "lon": lon, "address": result["display_name"]}, status=200)
+        else:
+            return Response({"error": "No results found"}, status=404)
+    except requests.exceptions.RequestException as e:
+        return Response({"error": str(e)}, status=500)
