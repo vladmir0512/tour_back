@@ -18,6 +18,7 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+#BASE_DIR = (os.path.dirname(os.path.abspath(__file__)))
 
 
 # Quick-start development settings - unsuitable for production
@@ -134,7 +135,8 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "route/static",
 ]
-
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -158,6 +160,4 @@ FIREBASE= pyrebase.initialize_app(config)
 FIREBASE_AUTH=FIREBASE.auth()
 
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000"
-]
+CORS_ALLOWED_ORIGINS = ["http://10.0.2.2:8000", "http://127.0.0.1:8000", "http://localhost:8000"]
