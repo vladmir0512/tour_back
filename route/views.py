@@ -1,3 +1,5 @@
+import json
+from django.http import JsonResponse
 from django.shortcuts import render
 import folium
 from route import getroute
@@ -5,6 +7,13 @@ from geopy.distance import geodesic
 import logging
 import numpy as np
 from math import radians, sin, cos, sqrt, atan2
+from rest_framework.decorators import api_view
+from .serializers import RouteSerializer
+from users.models import User  # Импортируем  модель User
+from rest_framework import status
+from rest_framework.response import Response
+
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -101,7 +110,9 @@ def find_closest_point_on_route(point_coords, routes):
             
     return closest_point, min_distance
 
-def showroute(request, lat1, long1, lat2, long2, attractions=None):
+def showroute(request, uid, lat1, long1, lat2, long2, attractions=None):
+    print(f"\n\nUID: {uid}, \nCoordinates: {lat1}, {long1}, {lat2}, {long2}\n")
+
     # Получаем параметры видимости маркеров из запроса
     show_attractions = request.GET.get('show_attractions', 'true').lower() == 'true'
     show_hotels = request.GET.get('show_hotels', 'true').lower() == 'true'
@@ -119,6 +130,7 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
             return render(request, 'error.html', 
                         {'error': f"Ошибка в координатах {coord_pair[2]} точки: {error_msg}"})
     
+ 
     # Список отелей Новочеркасска
     hotels = [
         ("47.41722,40.10833", "Платов Отель"),
@@ -130,7 +142,7 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
 
     # Главные достопримечательности Новочеркасска
     attractions = [
-            ("47.41465709241513,40.10877591178936", "Памятник Ермаку"),
+        ("47.41465709241513,40.10877591178936", "Памятник Ермаку"),
         ("47.40964864620244,40.10130932945763",  "Фонтан перед атаманским дворцом"),
         ("47.41004133861746,40.10100290000992",  "Фонтан в сквере имени М.И. Платова"),
         ("47.40832849238213,40.10235142945763",  "Большой Фонтан"),
@@ -154,11 +166,11 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
     
     attractions += request.GET.getlist('attractions')
     figure = folium.Figure()
-    logger.debug(f"Map figure created: {figure}")
+    #logger.debug(f"Map figure created: {figure}")
     lat1, long1, lat2, long2 = float(lat1), float(long1), float(lat2), float(long2)
     
     route_data = getroute.get_route(long1, lat1, long2, lat2, attractions)
-    logger.debug(f"Route data: {route_data}")  # Логирование данных маршрута
+
     start_point, end_point, routes, distance = route_data
     
     m = folium.Map(location=[start_point[0], start_point[1]], zoom_start=10) 
@@ -260,16 +272,19 @@ def showroute(request, lat1, long1, lat2, long2, attractions=None):
         '<div style="width:100%;"><div style="position:relative;width:100%;height:0;padding-bottom:60%;">', 
         '<div style="width:100%;"><div style="width:100%;height:0%;padding-bottom:60%;">', 
         1)
+        dist = round(distance, 2)
+        add_route(uid=uid, lat1=lat1, long1=long1, lat2=lat2, long2=long2,dist=dist)
+
         context = {
             'map': m,
-            'distance': round(distance, 2),
+            'distance': dist,
             'nearby_attractions': sorted(nearby_attractions.values(), key=lambda x: x['distance'])[:5],
             'nearby_hotels': sorted(nearby_hotels.values(), key=lambda x: x['distance'])[:5],
             'min_distance': min_distance_threshold,
             'show_attractions': show_attractions,
             'show_hotels': show_hotels
         }
-        logger.debug(f"Context for rendering: {context}")
+        #logger.debug(f"Context for rendering: {context}")
         return render(request, 'showroute.html', context)
     except Exception as e:
         logger.error(f"Ошибка при построении маршрута: {str(e)}")
@@ -294,3 +309,34 @@ def distance(lat1, lon1, lat2, lon2):
         return haversine_distance(float(lat1), float(lon1), float(lat2), float(lon2))
     except (ValueError, TypeError):
         return float('inf')
+    
+# Новый маршрут будет добавляться с использованием add_route
+def add_route(uid, lat1, long1, lat2, long2, dist):
+    # Сохранение маршрута в базе данных
+    #user_id = uid
+    coords = f"{lat1},{long1},{lat2},{long2}"
+    if not uid:
+        return JsonResponse({'error': 'userId not provided'}, status=400)
+
+    # Находим пользователя по user_id
+    try:
+        user = User.objects.get(firebase_user_id=uid)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+
+    # Формируем данные для маршрута
+
+    import requests
+    from random import randint
+    data = {
+        "name": f"Маршрут {randint(1000,100000)}",  # Название маршрута
+        "firebase_user_id": f"{uid}",  # UID пользователя из Firebase
+        "coords": f"{coords}"  ,# Координаты
+        "distance": f"{dist}"
+    }
+    print(f"\nДанные маршрута: {data}\n")
+    
+    url = "http://127.0.0.1:8000/api/routes/create/"
+
+    response = requests.post(url, json=data)
+    print(response)

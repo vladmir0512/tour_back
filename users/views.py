@@ -1,12 +1,18 @@
 import os
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views import View
 import json
 from conf.settings import FIREBASE_AUTH
+from route.models import Route, User 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from .models import User
-
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .serializers import RouteSerializer
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 class RegisterView(View):
     def post(self, request):
@@ -117,6 +123,8 @@ class UploadAvatarView(View):
         
         avatar = request.FILES['avatar']
         user_id = request.POST['userId']
+        print("USER_ID:", user_id)  # Должно быть НЕ пустым!
+
         print(f"FILES: {request.FILES}")
         print(f"POST: {request.POST}")
         
@@ -132,8 +140,14 @@ class UploadAvatarView(View):
             print(f"Файл сохранён: {user.avatar}")
             
             # Формируем абсолютный URL аватара
-            avatar_url = request.build_absolute_uri(user.avatar.url)
-            
+            avatar_url = None
+            if user.avatar:
+                try:
+                    avatar_url = request.build_absolute_uri(user.avatar.url)
+                except Exception as e:
+                    print(f"Ошибка получения avatar_url: {e}")
+
+
             return JsonResponse({'message': 'Аватар успешно загружен', 'avatar_url': avatar_url}, status=200)
         except User.DoesNotExist:
             return JsonResponse({'error': 'Пользователь не найден'}, status=404)
@@ -143,13 +157,19 @@ class UploadAvatarView(View):
 
 class GetUserAvatarView(View):
     def get(self, request):
-        user_id = request.GET.get('user_id')
-        
+        user_id = request.GET.get('user_id', '').strip()
+        print(f"USER_ID: '{user_id}' (type: {type(user_id)})")  # Выведем, что реально пришло
+
         if not user_id:
             return JsonResponse({'error': 'Не передан user_id'}, status=400)
-        
+
         try:
-            user = User.objects.get(firebase_user_id=user_id)
+            user = User.objects.filter(firebase_user_id=user_id).first()  # Используем first(), чтобы избежать ошибки
+            if not user:
+                print(f"Пользователь с firebase_user_id='{user_id}' не найден")
+                return JsonResponse({'error': 'Пользователь не найден'}, status=404)
+
+            
             avatar_url = request.build_absolute_uri(user.avatar.url) if user.avatar else None
 
             return JsonResponse({
@@ -157,5 +177,65 @@ class GetUserAvatarView(View):
                 'avatar_url': avatar_url
             }, status=200)
 
-        except User.DoesNotExist:
-            return JsonResponse({'error': 'Пользователь не найден'}, status=404)
+        except Exception as e:
+            print(f"Ошибка запроса к БД: {e}")
+            return JsonResponse({'error': 'Внутренняя ошибка сервера'}, status=500)
+
+    # def get(self, request):
+    #     user_id = request.GET.get('user_id')
+    #     print(f"USER_ID: {user_id} (type: {type(user_id)})")  # Отладочный вывод
+
+    #     if not user_id or user_id.strip() == "":
+    #         return JsonResponse({'error': 'Не передан user_id'}, status=400)
+
+    #     try:
+    #         user = User.objects.filter(firebase_user_id=user_id).first()
+    #         if not user:
+    #             return JsonResponse({'error': 'Пользователь не найден'}, status=404)
+    #         avatar_url = request.build_absolute_uri(user.avatar.url) if user.avatar else None
+
+    #         return JsonResponse({
+    #             'email': user.email,
+    #             'avatar_url': avatar_url
+    #         }, status=200)
+
+    #     except User.DoesNotExist:
+    #         return JsonResponse({'error': 'Пользователь не найден'}, status=404)
+
+    # """История маршрутов пользователя (5 последних)"""
+
+    # def get(self, request):
+    #     routes = Route.objects.filter(user=request.user).order_by("-created_at")[:5]
+    #     data = [
+    #         {
+    #             "id": route.id,
+    #             "name": route.name,
+    #             "description": route.description,
+    #             "created_at": route.created_at.isoformat()
+    #         }
+    #         for route in routes
+    #     ]
+    #     return JsonResponse(data, safe=False)
+    
+@api_view(['GET'])
+def get_routes(request):
+    routes = Route.objects.all().order_by('-created_at')
+    serializer = RouteSerializer(routes, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def update_rating(request):
+    try:
+        data = json.loads(request.body)
+        route_id = data.get("route_id")
+        new_rating = data.get("rating")
+
+        route = Route.objects.get(id=route_id)
+        route.rating = new_rating
+        route.save()
+
+        return JsonResponse({"message": "Рейтинг обновлен!"}, status=200)
+    except Route.DoesNotExist:
+        return JsonResponse({"error": "Маршрут не найден"}, status=404)
+    except:
+        return JsonResponse({"error": "Неверный метод"}, status=400)

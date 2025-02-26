@@ -32,8 +32,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-# Application definition
-a = 1
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -159,5 +157,5 @@ config = {
 FIREBASE= pyrebase.initialize_app(config)
 FIREBASE_AUTH=FIREBASE.auth()
 
-
+TIME_ZONE = 'Europe/Moscow'
 CORS_ALLOWED_ORIGINS = ["http://10.0.2.2:8000", "http://127.0.0.1:8000", "http://localhost:8000"]

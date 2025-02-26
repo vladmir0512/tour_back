@@ -2,6 +2,7 @@
 
 from rest_framework import serializers
 from .models import User
+from route.models import Route
 
 class FireBaseAuthSerializer(serializers.Serializer):
     token = serializers.CharField()
@@ -19,3 +20,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UploadAvatarSerializer(serializers.Serializer):
     avatar = serializers.ImageField()
+
+
+class RouteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Route
+        fields = '__all__'

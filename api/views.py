@@ -1,13 +1,14 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from route.models import Route, Comment, User
+from route.models import Route, User
 from rest_framework import serializers
 from rest_framework import status
-from .serializers import RouteSerializer, CommentSerializer, UserSerializer
+from .serializers import RouteSerializer, UserSerializer
 from django.shortcuts import get_object_or_404
 from urllib.parse import quote_plus
 from django.http import JsonResponse
-
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 import requests, time
 
 
@@ -27,17 +28,27 @@ def ApiRouteOverview(request):
 #-create-------------------------------------------------------
 @api_view(['POST'])
 def add_route(request):
-    route = RouteSerializer(data=request.data)
+    firebase_user_id = request.data.get('firebase_user_id')  # Получаем Firebase ID из запроса
+    try:
+        user = User.objects.get(firebase_user_id=firebase_user_id)  # Находим пользователя по firebase_user_id
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
 
-    # validating for already existing data
-    if Route.objects.filter(**request.data).exists():
-        raise serializers.ValidationError('This data already exists')
+    # Создаем данные для маршрута
+    route_data = {
+        "name": request.data.get("name", "Новый маршрут"),
+        "user": user.id,  # Используем только ID пользователя, а не сам объект
+        "coords": request.data.get("coords", ""),
+        "distance": request.data.get("distance", "")
+    }
 
-    if route.is_valid():
-        route.save()
-        return Response(route.data)
+    route_serializer = RouteSerializer(data=route_data)
+    if route_serializer.is_valid():
+        route_serializer.save()
+        return Response(route_serializer.data, status=status.HTTP_201_CREATED)
     else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(route_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 #-update-------------------------------------------------------    
 @api_view(['POST'])
@@ -75,71 +86,8 @@ def view_routes(request):
     else:
         return Response(status=status.HTTP_404_NOT_FOUND)
     
-    
-#-----------------------СOMMENTS-------------------------------
-#-info---------------------------------------------------------
-@api_view(['GET'])
-def ApiCommentOverview(request):
-	api_urls = {
-		'all_comments': '/list',
-		'Add': '/create',
-		'Update': '/update/pk',
-		'Delete': '/delete/pk'
-	}
 
-	return Response(api_urls)
 
-#-create-------------------------------------------------------
-@api_view(['POST'])
-def add_comment(request):
-    comment = CommentSerializer(data=request.data)
-
-    # validating for already existing data
-    if Comment.objects.filter(**request.data).exists():
-        raise serializers.ValidationError('This data already exists')
-
-    if comment.is_valid():
-        comment.save()
-        return Response(comment.data)
-    else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    
-#-update-------------------------------------------------------    
-@api_view(['POST'])
-def update_comment(request, pk):
-    comment = Comment.objects.get(pk=pk)
-    data = CommentSerializer(instance=comment, data=request.data)
-
-    if data.is_valid():
-        data.save()
-        return Response(data.data)
-    else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-#-delete-------------------------------------------------------    
-@api_view(['DELETE'])
-def delete_comment(request, pk):
-    comment = get_object_or_404(Comment, pk=pk)
-    comment.delete()
-    return Response(status=status.HTTP_202_ACCEPTED)
-        
-#-all----------------------------------------------------------        
-@api_view(['GET'])
-def view_comments(request):
-
-    # checking for the parameters from the URL
-    if request.query_params:
-        comment = Comment.objects.filter(**request.query_params.dict())
-    else:
-        comments = Comment.objects.all()
-
-    # if there is something in items else raise error
-    if comments:
-        serializer = CommentSerializer(comments, many=True)
-        return Response(serializer.data)
-    else:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    
 #-------------------------USERS--------------------------------
 #-info---------------------------------------------------------
 @api_view(['GET'])
@@ -227,3 +175,4 @@ def search_address(request):
             return Response({"error": "No results found"}, status=404)
     except requests.exceptions.RequestException as e:
         return Response({"error": str(e)}, status=500)
+    

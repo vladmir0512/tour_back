@@ -13,13 +13,7 @@ urlpatterns = [
     path('routes/update/<int:pk>/', views.update_route, name='update-route'),
     path('routes/delete/<int:pk>/', views.delete_route, name='delete-comment'),
 
-    # for COMMENTS
-    path('comments/', views.ApiCommentOverview, name='comments'),
-    path('comments/create/', views.add_comment, name='add-comment'),
-    path('comments/list/', views.view_comments, name='view_comments'),
-    path('comments/update/<int:pk>/', views.update_comment, name='update-comment'),
-    path('comments/delete/<int:pk>/', views.delete_comment, name='delete-comment'),
-
+  
     # for USERS
     path('users/', views.ApiUserOverview, name='users'),
     path('users/create/', views.add_user, name='add-user'),

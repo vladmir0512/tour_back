@@ -31,4 +31,4 @@ class User(models.Model):
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)  # поле для хранения изображения
 
     def __str__(self: "User") -> str:
-        return f"{self.username}"
+        return f"{self.email}"
