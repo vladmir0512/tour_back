@@ -1,4 +1,4 @@
-# Project Title
+# Агрегатор турмаршрутов
 
 ## Description
 A brief description of your project.
@@ -17,7 +17,7 @@ python -m venv venv
 
 Активировать `venv`: 
 
-Windows:
+`Windows:
 ```
 source venv/Scripts/activate
 ```
@@ -28,8 +28,11 @@ source venv/bin/activate
 ```
 
 ## Usage
-Instructions for using the project.
 
+Запускаем сервер:
+```
+python manage.py runserver
+```
 ## Contributing
 Guidelines for contributing to the project.
 

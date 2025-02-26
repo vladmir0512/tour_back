@@ -3,4 +3,4 @@ from .models import Route
 # Register your models here.
 @admin.register(Route)
 class RouteAdmin(admin.ModelAdmin):
-    fields = ["name",  "user", "distance", "rating", "coords", "created_at"]
+    fields = ["name",  "user", "distance", "rating", "comment", "coords", "created_at"]

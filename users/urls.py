@@ -1,7 +1,7 @@
 # users/urls.py
 
 from django.urls import path
-from .views import RegisterView, LoginView, UploadAvatarView, GetUserAvatarView, get_routes, update_rating
+from .views import RegisterView, LoginView, UploadAvatarView, GetUserAvatarView, get_routes, update_rating, add_comment
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -9,6 +9,7 @@ urlpatterns = [
     path('upload-avatar/', UploadAvatarView.as_view(), name='upload_avatar'),  # Новый маршрут для загрузки изображения
     path('avatar/', GetUserAvatarView.as_view(), name='get_user_avatar'),
     path('routes/', get_routes, name='get_routes'),
-    path('routes/update-rating/', update_rating, name='update_rating')
+    path('routes/update-rating/', update_rating, name='update_rating'),
+    path('routes/add-comment/', add_comment, name='add_comment')
 
 ]

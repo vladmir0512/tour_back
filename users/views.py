@@ -224,6 +224,23 @@ def get_routes(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
+def add_comment(request):
+    try:
+        data = json.loads(request.body)
+        route_id = data.get("route_id")
+        comment_text = data.get("comment")
+
+        route = Route.objects.get(id=route_id)
+        route.comment = comment_text  # Обновляем поле комментария
+        route.save()
+
+        return JsonResponse({"message": "Комментарий добавлен!"}, status=200)
+    except Route.DoesNotExist:
+        return JsonResponse({"error": "Маршрут не найден"}, status=404)
+    except:
+        return JsonResponse({"error": "Неверный метод"}, status=400)
+    
+@api_view(['POST'])
 def update_rating(request):
     try:
         data = json.loads(request.body)
