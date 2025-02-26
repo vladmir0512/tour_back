@@ -5,8 +5,26 @@ A brief description of your project.
 
 ## Installation
 To install the required packages, run the following command:
+
+Клонируем проект:
 ```
-pip install -r requirements.txt
+git clone https://github.com/vladmir0512/tour_back/
+```
+Создайте виртуальную среду 
+```
+python -m venv venv
+```
+
+Активировать `venv`: 
+
+Windows:
+```
+source venv/Scripts/activate
+```
+
+Linux/Mac:
+```
+source venv/bin/activate
 ```
 
 ## Usage
