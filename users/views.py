@@ -13,6 +13,7 @@ from .serializers import RouteSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.exceptions import NotFound
 
 class RegisterView(View):
     def post(self, request):
@@ -217,6 +218,18 @@ class GetUserAvatarView(View):
     #     ]
     #     return JsonResponse(data, safe=False)
     
+@api_view(['GET'])
+def get_routes_users(request, uid):
+    try:
+        user = User.objects.get(firebase_user_id=uid)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь не найден"}, status=404)
+    routes = Route.objects.filter(user=user).order_by('-created_at')
+    if not routes.exists():
+        raise NotFound("Маршруты для этого пользователя не найдены.")
+    serializer = RouteSerializer(routes, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 @api_view(['GET'])
 def get_routes(request):
     routes = Route.objects.all().order_by('-created_at')
