@@ -141,6 +141,10 @@
             background-color: purple;
         }
 
+        .color-green {
+            background-color: green;
+        }
+
         .places-list {
             margin-top: 15px;
             max-height: 300px;
@@ -172,6 +176,10 @@
 
         .places-list h5.hotels::before {
             background-color: purple;
+        }
+
+        .places-list h5.natural::before {
+            background-color: green;
         }
 
         .places-list ul {
@@ -209,6 +217,10 @@
 
         .places-list li.hotel:before {
             color: purple;
+        }
+
+        .places-list li.natural:before {
+            color: green;
         }
 
         body,
@@ -254,6 +266,12 @@
                     <span class="color-indicator color-purple"></span>
                     <label for="toggle-hotels">Отели</label>
                 </div>
+                <div class="marker-toggle">
+                    <input type="checkbox" id="toggle-natural" {% if show_natural %}checked{% endif %}
+                        onchange="toggleMarkers('natural')">
+                    <span class="color-indicator color-green"></span>
+                    <label for="toggle-natural">Природные достопримечательности</label>
+                </div>
             </div>
 
             <div class="places-list">
@@ -273,6 +291,16 @@
                     <li class="hotel" data-marker-id="marker-hotel-{{ forloop.counter }}">
                         <span class="name">{{ hotel.name }}</span>
                         <span class="distance">{{ hotel.distance|floatformat:2 }} км</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <h5 class="natural">Ближайшие природные достопримечательности</h5>
+                <ul id="natural-list">
+                    {% for natural in nearby_natural %}
+                    <li class="natural" data-marker-id="marker-natural-{{ forloop.counter }}">
+                        <span class="name">{{ natural.name }}</span>
+                        <span class="distance">{{ natural.distance|floatformat:2 }} км</span>
                     </li>
                     {% endfor %}
                 </ul>
@@ -296,6 +324,8 @@
                 currentUrl.searchParams.set('show_attractions', isChecked);
             } else if (type === 'hotels') {
                 currentUrl.searchParams.set('show_hotels', isChecked);
+            } else if (type === 'natural') {
+                currentUrl.searchParams.set('show_natural', isChecked);
             }
             const minDistance = document.getElementById('min-distance').value;
             currentUrl.searchParams.set('min_distance', minDistance);
@@ -315,11 +345,15 @@
             }
             const showAttractions = urlParams.get('show_attractions');
             const showHotels = urlParams.get('show_hotels');
+            const showNatural = urlParams.get('show_natural');
             if (showAttractions !== null) {
                 document.getElementById('toggle-attractions').checked = showAttractions === 'true';
             }
             if (showHotels !== null) {
                 document.getElementById('toggle-hotels').checked = showHotels === 'true';
+            }
+            if (showNatural !== null) {
+                document.getElementById('toggle-natural').checked = showNatural === 'true';
             }
             if (window.Android) {
                 window.updateFromAndroid = function (minDistance) {

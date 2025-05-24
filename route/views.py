@@ -87,6 +87,7 @@ def find_closest_point_on_route(point_coords, routes):
 def showroute(request, uid, lat1, long1, lat2, long2, attractions=None):
     show_attractions = request.GET.get('show_attractions', 'true').lower() == 'true'
     show_hotels = request.GET.get('show_hotels', 'true').lower() == 'true'
+    show_natural = request.GET.get('show_natural', 'true').lower() == 'true'
     try:
         min_distance_threshold = float(request.GET.get('min_distance', 1.0))
     except (ValueError, TypeError):
@@ -179,6 +180,43 @@ def showroute(request, uid, lat1, long1, lat2, long2, attractions=None):
         ("51.5354791167413, 46.00947582517831", "Детский парк"),
         ("51.52116854768777, 46.00295269285081", "Городской парк культуры и отдыха")
     ]
+    natural_attractions = [
+        ("47.234444, 39.712778", "Ботанический сад ЮФУ"),
+        ("47.250000, 39.750000", "Парк имени Горького"),
+        ("47.216667, 39.716667", "Парк имени Октябрьской революции"),
+        ("47.233333, 39.733333", "Парк имени 1 Мая"),
+        ("47.241667, 39.708333", "Парк имени Вити Черевичкина"),
+        ("47.258333, 39.791667", "Парк имени Собино"),
+        ("47.275000, 39.833333", "Парк имени Ленина"),
+        ("47.291667, 39.875000", "Парк имени Кирова"),
+        ("47.308333, 39.916667", "Парк имени Фрунзе"),
+        ("47.325000, 39.958333", "Парк имени Дзержинского"),
+        ("47.341667, 40.000000", "Парк имени Калинина"),
+        ("47.358333, 40.041667", "Парк имени Куйбышева"),
+        ("47.375000, 40.083333", "Парк имени Орджоникидзе"),
+        ("47.391667, 40.125000", "Парк имени Ворошилова"),
+        ("47.408333, 40.166667", "Парк имени Буденного"),
+        ("47.425000, 40.208333", "Парк имени Ворошилова"),
+        ("47.441667, 40.250000", "Парк имени Буденного"),
+        ("47.458333, 40.291667", "Парк имени Ворошилова"),
+        ("47.475000, 40.333333", "Парк имени Буденного"),
+        ("47.491667, 40.375000", "Парк имени Ворошилова"),
+        ("47.123456, 39.789012", "Природный парк Донской"),
+        ("47.234567, 39.890123", "Заповедник Ростовский"),
+        ("47.345678, 39.901234", "Озеро Маныч-Гудило"),
+        ("47.456789, 39.912345", "Водопад на реке Дон"),
+        ("47.567890, 39.923456", "Пещера Каменная"),
+        ("47.678901, 39.934567", "Родник Святой"),
+        ("47.789012, 39.945678", "Гора Долгая"),
+        ("47.890123, 39.956789", "Лесной массив Донской"),
+        ("47.901234, 39.967890", "Озеро Цимлянское"),
+        ("47.012345, 39.978901", "Заказник Вешенский"),
+        ("47.123456, 39.989012", "Природный памятник Каменная Балка"),
+        ("47.234567, 39.990123", "Роща Дубовая"),
+        ("47.345678, 39.991234", "Озеро Соленое"),
+        ("47.456789, 39.992345", "Водопад на реке Северский Донец"),
+        ("47.567890, 39.993456", "Пещера Медвежья")
+    ]
     attractions += request.GET.getlist('attractions')
     figure = folium.Figure()
     lat1, long1, lat2, long2 = float(lat1), float(long1), float(lat2), float(long2)
@@ -206,6 +244,7 @@ def showroute(request, uid, lat1, long1, lat2, long2, attractions=None):
     ).add_to(m)
     nearby_attractions = {}
     nearby_hotels = {}
+    nearby_natural = {}
     if show_attractions:
         attraction_counter = 1
         for attraction in attractions:
@@ -256,6 +295,26 @@ def showroute(request, uid, lat1, long1, lat2, long2, attractions=None):
                 )
                 marker.add_to(m)
                 hotel_counter += 1
+    if show_natural:
+        natural_counter = 1
+        for natural in natural_attractions:
+            coords = tuple(map(float, natural[0].split(',')))
+            closest_point, min_distance = find_closest_point_on_route(coords, routes)
+            if min_distance <= min_distance_threshold:
+                nearby_natural[natural[1]] = {
+                    'name': natural[1],
+                    'distance': min_distance,
+                    'coords': coords,
+                    'id': f'marker-natural-{natural_counter}'
+                }
+                marker = folium.Marker(
+                    location=[coords[0], coords[1]],
+                    icon=folium.Icon(color='green', icon='leaf'),
+                    popup=f"{natural[1]} ({min_distance:.2f} км)",
+                    html=f'<div class="marker-natural" id="marker-natural-{natural_counter}"></div>'
+                )
+                marker.add_to(m)
+                natural_counter += 1
     try:
         m=m._repr_html_() 
         m = m.replace(
@@ -269,9 +328,11 @@ def showroute(request, uid, lat1, long1, lat2, long2, attractions=None):
             'distance': dist,
             'nearby_attractions': sorted(nearby_attractions.values(), key=lambda x: x['distance'])[:5],
             'nearby_hotels': sorted(nearby_hotels.values(), key=lambda x: x['distance'])[:5],
+            'nearby_natural': sorted(nearby_natural.values(), key=lambda x: x['distance'])[:5],
             'min_distance': min_distance_threshold,
             'show_attractions': show_attractions,
-            'show_hotels': show_hotels
+            'show_hotels': show_hotels,
+            'show_natural': show_natural
         }
         return render(request, 'showroute.html', context)
     except Exception as e:
