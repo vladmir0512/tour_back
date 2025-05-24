@@ -11,9 +11,7 @@ class CustomUser(AbstractUser):
         null=True,
         blank=True,
     )
-
     firebase_user_id = models.CharField(max_length=28, null=True, blank=True)
-
 
     def __str__(self: "CustomUser") -> str:
         return f"{self.email}"
@@ -28,7 +26,7 @@ class User(models.Model):
     )
     email = models.EmailField(null=True, blank=True)
     firebase_user_id = models.CharField(max_length=28, null=True, blank=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)  # поле для хранения изображения
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)  
 
     def __str__(self: "User") -> str:
         return f"{self.email}"

@@ -7,9 +7,9 @@ class Route(models.Model):
     name = models.CharField(max_length=255, blank=False, null=False, default="Новый маршрут")
     comment = models.TextField(blank=False, null=False,default="Ваш комментарий")
     created_at = models.DateTimeField(default=timezone.now)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)  # Используем стандартную модель User
+    user = models.ForeignKey(User, on_delete=models.CASCADE) 
     distance = models.FloatField(default=0, validators=[MinValueValidator(0)])
-    coords = models.CharField(max_length=1000, default="40.0,40.0,40.0,40.0")  # Пример координат для старта и финиша
+    coords = models.CharField(max_length=1000, default="40.0,40.0,40.0,40.0")  
     rating = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(5)], default=0)
     class Meta:
         db_table = "Маршрут"

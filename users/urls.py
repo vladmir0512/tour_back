@@ -6,7 +6,7 @@ from .views import RegisterView, LoginView, UploadAvatarView, GetUserAvatarView,
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
-    path('upload-avatar/', UploadAvatarView.as_view(), name='upload_avatar'),  # Новый маршрут для загрузки изображения
+    path('upload-avatar/', UploadAvatarView.as_view(), name='upload_avatar'),
     path('avatar/', GetUserAvatarView.as_view(), name='get_user_avatar'),
     path('routes/', get_routes, name='get_routes'),
     path('routes/update-rating/', update_rating, name='update_rating'),
